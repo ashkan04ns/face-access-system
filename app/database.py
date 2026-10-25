@@ -44,3 +44,52 @@ def get_user_permissions(email):
     connection.close()
 
     return results
+
+def save_face_embedding(user_id, embedding):
+    #Connect to PostgreSQL database
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    #Save the face embedding to the user.
+
+    #user_id is unique in face_profiles, so if this user already has an enroll face, update it instead of creating a duplicate.
+
+    cursor.execute(
+        """
+        INSERT INTO face_profiles(
+        user_id,
+        face_embedding
+        )
+        VALUES (%s, %s)
+        ON CONFLICT (user_id) DO UPDATE SET face_embedding = EXCLUDED.face_embedding, created_at = CURRENT_TIMESTAMP;
+        """,
+        (user_id, embedding)
+    )
+
+    #Insert/Update operation is need to be committed.
+    connection.commit()
+
+    cursor.close()
+    connection.close()
+
+def get_face_profiles():
+    # Connect to PostgreSQL.
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    # Retrieve every enrolled user's stored face embedding.
+    cursor.execute(
+        """
+        SELECT
+            face_profiles.user_id,
+            face_profiles.face_embedding
+        FROM face_profiles;
+        """
+    )
+
+    profiles = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return profiles
